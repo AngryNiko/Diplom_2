@@ -1,5 +1,6 @@
 package client;
 
+import config.Endpoints;
 import io.qameta.allure.Step;
 import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.response.Response;
@@ -16,7 +17,7 @@ public class OrderClient {
                 .filter(new AllureRestAssured())
                 .header("Content-type", "application/json")
                 .body(order)
-                .post("/api/orders");
+                .post(Endpoints.CREATE_ORDER);
     }
 
     @Step("Создание заказа с авторизацией")
@@ -27,6 +28,6 @@ public class OrderClient {
                 .header("Content-type", "application/json")
                 .header("Authorization", token)
                 .body(order)
-                .post("/api/orders");
+                .post(Endpoints.CREATE_ORDER);
     }
 }

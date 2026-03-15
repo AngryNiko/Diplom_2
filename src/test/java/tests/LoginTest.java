@@ -2,73 +2,73 @@ package tests;
 
 import client.UserClient;
 import io.qameta.allure.*;
+import io.qameta.allure.junit4.DisplayName;
 import models.User;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import utils.UserGenerator;
 
+import static org.apache.http.HttpStatus.*;
 import static org.hamcrest.Matchers.equalTo;
 
+@Epic("Stellar Burgers API")
+@Feature("Логин пользователя")
 public class LoginTest extends BaseTest {
 
     UserClient userClient = new UserClient();
 
-    String accessToken;
     User user;
+    String accessToken;
 
-    @Test
-    @Story("Логин существующего пользователя")
-    @Description("Проверяем успешный вход под существующим пользователем")
-    public void loginExistingUserTest() {
+    @Before
+    public void createUser() {
 
         user = UserGenerator.createRandomUser();
-
         userClient.createUser(user);
 
         accessToken = userClient.loginUser(user)
                 .then()
-                .statusCode(200)
-                .body("success", equalTo(true))
                 .extract()
                 .path("accessToken");
     }
 
     @Test
-    @Story("Логин с неверным email")
-    @Description("Проверяем что система возвращает ошибку при неверном логине")
-    public void loginWithWrongEmailTest() {
+    @DisplayName("Логин существующего пользователя")
+    @Description("Проверяем успешный вход под существующим пользователем")
+    public void loginExistingUserTest() {
 
-        user = UserGenerator.createRandomUser();
-        userClient.createUser(user);
-
-        User wrongUser = new User(
-                "wrong_" + user.email,
-                user.password,
-                user.name
-        );
-
-        userClient.loginUser(wrongUser)
+        userClient.loginUser(user)
                 .then()
-                .statusCode(401);
+                .statusCode(SC_OK);
     }
 
     @Test
-    @Story("Логин с неверным паролем")
-    @Description("Проверяем что система возвращает ошибку при неверном пароле")
-    public void loginWithWrongPasswordTest() {
+    @DisplayName("Логин с неверным email")
+    @Description("Проверяем ошибку авторизации при неверном email")
+    public void loginWithWrongEmailTest() {
 
-        user = UserGenerator.createRandomUser();
-        userClient.createUser(user);
-
-        User wrongUser = new User(
-                user.email,
-                "wrong_password",
-                user.name
-        );
+        User wrongUser = new User("wrong_" + user.email, user.password, user.name);
 
         userClient.loginUser(wrongUser)
                 .then()
-                .statusCode(401);
+                .statusCode(SC_UNAUTHORIZED)
+                .body("success", equalTo(false))
+                .body("message", equalTo("email or password are incorrect"));
+    }
+
+    @Test
+    @DisplayName("Логин с неверным паролем")
+    @Description("Проверяем ошибку авторизации при неверном пароле")
+    public void loginWithWrongPasswordTest() {
+
+        User wrongUser = new User(user.email, "wrong_password", user.name);
+
+        userClient.loginUser(wrongUser)
+                .then()
+                .statusCode(SC_UNAUTHORIZED)
+                .body("success", equalTo(false))
+                .body("message", equalTo("email or password are incorrect"));
     }
 
     @After

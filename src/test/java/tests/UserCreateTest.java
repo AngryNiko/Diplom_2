@@ -2,12 +2,13 @@ package tests;
 
 import client.UserClient;
 import io.qameta.allure.*;
+import io.qameta.allure.junit4.DisplayName;
 import models.User;
 import org.junit.After;
 import org.junit.Test;
 import utils.UserGenerator;
 
-import static io.restassured.RestAssured.given;
+import static org.apache.http.HttpStatus.*;
 import static org.hamcrest.Matchers.equalTo;
 
 @Epic("Stellar Burgers API")
@@ -15,11 +16,12 @@ import static org.hamcrest.Matchers.equalTo;
 public class UserCreateTest extends BaseTest {
 
     UserClient userClient = new UserClient();
+
     String accessToken;
     User user;
 
     @Test
-    @Story("Создание уникального пользователя")
+    @DisplayName("Создание уникального пользователя")
     @Description("Проверяем успешное создание пользователя")
     public void createUniqueUserTest() {
 
@@ -27,15 +29,15 @@ public class UserCreateTest extends BaseTest {
 
         accessToken = userClient.createUser(user)
                 .then()
-                .statusCode(200)
+                .statusCode(SC_OK)
                 .body("success", equalTo(true))
                 .extract()
                 .path("accessToken");
     }
 
     @Test
-    @Story("Создание существующего пользователя")
-    @Description("Проверяем, что повторная регистрация невозможна")
+    @DisplayName("Создание существующего пользователя")
+    @Description("Проверяем что повторная регистрация невозможна")
     public void createExistingUserTest() {
 
         user = UserGenerator.createRandomUser();
@@ -44,50 +46,51 @@ public class UserCreateTest extends BaseTest {
 
         userClient.createUser(user)
                 .then()
-                .statusCode(403)
-                .body("success", equalTo(false));
+                .statusCode(SC_FORBIDDEN)
+                .body("success", equalTo(false))
+                .body("message", equalTo("User already exists"));
     }
 
     @Test
-    @Story("Создание пользователя без имени")
+    @DisplayName("Создание пользователя без имени")
+    @Description("Проверяем ошибку при отсутствии имени")
     public void createUserWithoutNameTest() {
 
-        String body = "{\"email\":\"test@mail.com\",\"password\":\"123456\"}";
+        User user = new User("test@mail.com", "123456", null);
 
-        given()
-                .header("Content-type", "application/json")
-                .body(body)
-                .post("/api/auth/register")
+        userClient.createUser(user)
                 .then()
-                .statusCode(403);
+                .statusCode(SC_FORBIDDEN)
+                .body("success", equalTo(false))
+                .body("message", equalTo("Email, password and name are required fields"));
     }
 
     @Test
-    @Story("Создание пользователя без email")
+    @DisplayName("Создание пользователя без email")
+    @Description("Проверяем ошибку при отсутствии email")
     public void createUserWithoutEmailTest() {
 
-        String body = "{\"password\":\"123456\",\"name\":\"Test\"}";
+        User user = new User(null, "123456", "Test");
 
-        given()
-                .header("Content-type", "application/json")
-                .body(body)
-                .post("/api/auth/register")
+        userClient.createUser(user)
                 .then()
-                .statusCode(403);
+                .statusCode(SC_FORBIDDEN)
+                .body("success", equalTo(false))
+                .body("message", equalTo("Email, password and name are required fields"));
     }
 
     @Test
-    @Story("Создание пользователя без пароля")
+    @DisplayName("Создание пользователя без пароля")
+    @Description("Проверяем ошибку при отсутствии пароля")
     public void createUserWithoutPasswordTest() {
 
-        String body = "{\"email\":\"test@mail.com\",\"name\":\"Test\"}";
+        User user = new User("test@mail.com", null, "Test");
 
-        given()
-                .header("Content-type", "application/json")
-                .body(body)
-                .post("/api/auth/register")
+        userClient.createUser(user)
                 .then()
-                .statusCode(403);
+                .statusCode(SC_FORBIDDEN)
+                .body("success", equalTo(false))
+                .body("message", equalTo("Email, password and name are required fields"));
     }
 
     @After

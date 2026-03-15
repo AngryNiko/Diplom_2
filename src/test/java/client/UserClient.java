@@ -1,5 +1,6 @@
 package client;
 
+import config.Endpoints;
 import io.qameta.allure.Step;
 import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.response.Response;
@@ -16,7 +17,7 @@ public class UserClient {
                 .filter(new AllureRestAssured())
                 .header("Content-type", "application/json")
                 .body(user)
-                .post("/api/auth/register");
+                .post(Endpoints.CREATE_USER);
     }
 
     @Step("Логин пользователя")
@@ -26,7 +27,7 @@ public class UserClient {
                 .filter(new AllureRestAssured())
                 .header("Content-type", "application/json")
                 .body(user)
-                .post("/api/auth/login");
+                .post(Endpoints.LOGIN_USER);
     }
 
     @Step("Удаление пользователя")
@@ -35,6 +36,6 @@ public class UserClient {
         return given()
                 .filter(new AllureRestAssured())
                 .header("Authorization", token)
-                .delete("/api/auth/user");
+                .delete(Endpoints.DELETE_USER);
     }
 }
