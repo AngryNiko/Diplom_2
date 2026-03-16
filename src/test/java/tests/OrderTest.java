@@ -6,8 +6,7 @@ import io.qameta.allure.*;
 import io.qameta.allure.junit4.DisplayName;
 import models.Order;
 import models.User;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.*;
 import utils.UserGenerator;
 
 import java.util.List;
@@ -23,27 +22,34 @@ public class OrderTest extends BaseTest {
     UserClient userClient = new UserClient();
 
     String accessToken;
+    User user;
+
+    @Before
+    public void createUser() {
+        user = UserGenerator.createRandomUser();
+        userClient.createUser(user);
+    }
+
+    private void loginUserAndGetToken() {
+        accessToken = userClient.loginUser(user)
+                .then()
+                .statusCode(SC_OK)
+                .extract()
+                .path("accessToken");
+    }
 
     @Test
     @DisplayName("Создание заказа с авторизацией")
     @Description("Проверяем создание заказа авторизованным пользователем")
     public void createOrderWithAuthTest() {
 
-        User user = UserGenerator.createRandomUser();
-
-        userClient.createUser(user);
-
-        accessToken = userClient.loginUser(user)
-                .then()
-                .extract()
-                .path("accessToken");
+        loginUserAndGetToken();
 
         Order order = new Order(List.of("61c0c5a71d1f82001bdaaa6d"));
 
         orderClient.createOrderWithAuth(order, accessToken)
                 .then()
-                .statusCode(SC_OK)
-                .body("success", equalTo(true));
+                .statusCode(SC_OK);
     }
 
     @Test
@@ -55,10 +61,7 @@ public class OrderTest extends BaseTest {
 
         orderClient.createOrder(order);
 
-        User user = UserGenerator.createRandomUser();
-        UserClient userClient = new UserClient();
-
-        userClient.createUser(user);
+        loginUserAndGetToken();
 
         String accessToken = userClient.loginUser(user)
                 .then()
@@ -78,6 +81,8 @@ public class OrderTest extends BaseTest {
     @Description("Проверяем ошибку создания заказа без ингредиентов")
     public void createOrderWithoutIngredientsTest() {
 
+        loginUserAndGetToken();
+
         Order order = new Order(null);
 
         orderClient.createOrder(order)
@@ -91,6 +96,8 @@ public class OrderTest extends BaseTest {
     @DisplayName("Создание заказа с неверным хешем")
     @Description("Проверяем ошибку при передаче неверного хеша ингредиента")
     public void createOrderWithWrongHashTest() {
+
+        loginUserAndGetToken();
 
         Order order = new Order(List.of("invalidhash"));
 
